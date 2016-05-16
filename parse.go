@@ -50,12 +50,16 @@ func GetFileStructs(filename string, prefix string, tag string) ([]StructDesc, e
 									continue
 								}
 								newField.Name = field.Names[0].Name
-								if e, ok := field.Type.(*ast.Ident); ok {
+								switch e := field.Type.(type) {
+								case *ast.Ident:
 									newField.Type = e.Name
-								}
-								if e, ok := field.Type.(*ast.ArrayType); ok {
+								case *ast.ArrayType:
 									if e2, ok := e.Elt.(*ast.Ident); ok {
 										newField.Type = "[]" + e2.Name
+									}
+								case *ast.StarExpr:
+									if e2, ok := e.X.(*ast.Ident); ok {
+										newField.Type = "*" + e2.Name
 									}
 								}
 								if nil != field.Tag {
