@@ -53,6 +53,11 @@ func GetFileStructs(filename string, prefix string, tag string) ([]StructDesc, e
 								if e, ok := field.Type.(*ast.Ident); ok {
 									newField.Type = e.Name
 								}
+								if e, ok := field.Type.(*ast.ArrayType); ok {
+									if e2, ok := e.Elt.(*ast.Ident); ok {
+										newField.Type = "[]" + e2.Name
+									}
+								}
 								if nil != field.Tag {
 									newField.Tags = strings.Split(reflect.StructTag(strings.Trim(field.Tag.Value, "`")).Get(tag), ",")
 								}
