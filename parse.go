@@ -5,6 +5,7 @@ import (
 	"go/parser"
 	"go/token"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -20,6 +21,8 @@ type StructField struct {
 	Type      string
 	Tags      []string
 	TagParams map[string]string
+	TagGt     map[string]int
+	TagLt     map[string]int
 }
 
 func getTypeName(t ast.Expr) string {
@@ -59,17 +62,35 @@ func GetFileStructs(filename string, prefix string, tag string) ([]StructDesc, e
 								}
 								newField.Name = field.Names[0].Name
 								newField.Type = getTypeName(field.Type)
+								newField.Tags = []string{}
+								newField.TagParams = map[string]string{}
+								newField.TagGt = map[string]int{}
+								newField.TagLt = map[string]int{}
+
 								if nil != field.Tag {
 									tags := strings.Split(reflect.StructTag(strings.Trim(field.Tag.Value, "`")).Get(tag), ",")
-									newField.Tags = make([]string, 0, len(tags))
-									newField.TagParams = make(map[string]string, len(tags))
+
 									for _, tag := range tags {
 										ts := strings.SplitN(tag, "=", 2)
-										if len(ts) == 1 {
-											newField.Tags = append(newField.Tags, ts[0])
-										} else {
+										if len(ts) == 2 {
 											newField.TagParams[ts[0]] = ts[1]
 										}
+										if len(ts) == 1 {
+											ts = strings.SplitN(tag, ">", 2)
+											if len(ts) == 2 {
+												newField.TagGt[ts[0]], _ = strconv.Atoi(ts[1])
+											}
+										}
+										if len(ts) == 1 {
+											ts = strings.SplitN(tag, "<", 2)
+											if len(ts) == 2 {
+												newField.TagLt[ts[0]], _ = strconv.Atoi(ts[1])
+											}
+										}
+										if len(ts) == 1 {
+											newField.Tags = append(newField.Tags, ts[0])
+										}
+
 									}
 								}
 								newStruct.Field = append(newStruct.Field, newField)
