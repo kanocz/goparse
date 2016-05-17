@@ -18,6 +18,18 @@ type StructDesc struct {
 	}
 }
 
+func getTypeName(t ast.Expr) string {
+	switch e := t.(type) {
+	case *ast.Ident:
+		return e.Name
+	case *ast.ArrayType:
+		return "[]" + getTypeName(e.Elt)
+	case *ast.StarExpr:
+		return "*" + getTypeName(e.X)
+	}
+	return "unknown"
+}
+
 // GetFileStructs returns structs descriptions from parsed go file
 func GetFileStructs(filename string, prefix string, tag string) ([]StructDesc, error) {
 	result := make([]StructDesc, 0, 5)
@@ -50,18 +62,7 @@ func GetFileStructs(filename string, prefix string, tag string) ([]StructDesc, e
 									continue
 								}
 								newField.Name = field.Names[0].Name
-								switch e := field.Type.(type) {
-								case *ast.Ident:
-									newField.Type = e.Name
-								case *ast.ArrayType:
-									if e2, ok := e.Elt.(*ast.Ident); ok {
-										newField.Type = "[]" + e2.Name
-									}
-								case *ast.StarExpr:
-									if e2, ok := e.X.(*ast.Ident); ok {
-										newField.Type = "*" + e2.Name
-									}
-								}
+								newField.Type = getTypeName(field.Type)
 								if nil != field.Tag {
 									newField.Tags = strings.Split(reflect.StructTag(strings.Trim(field.Tag.Value, "`")).Get(tag), ",")
 								}
