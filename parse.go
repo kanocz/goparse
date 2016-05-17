@@ -11,11 +11,14 @@ import (
 // StructDesc contains description of parsed struct
 type StructDesc struct {
 	Name  string
-	Field []struct {
-		Name string
-		Type string
-		Tags []string
-	}
+	Field []StructField
+}
+
+// StructField describes field itself
+type StructField struct {
+	Name string
+	Type string
+	Tags map[string]string
 }
 
 func getTypeName(t ast.Expr) string {
@@ -47,24 +50,25 @@ func GetFileStructs(filename string, prefix string, tag string) ([]StructDesc, e
 				if ts, ok := s.(*ast.TypeSpec); ok {
 					if "" == prefix || strings.HasPrefix(ts.Name.String(), prefix) {
 						if tt, ok := ts.Type.(*ast.StructType); ok {
-							newStruct := StructDesc{Name: ts.Name.String(), Field: make([]struct {
-								Name string
-								Type string
-								Tags []string
-							}, 0, len(tt.Fields.List))}
+							newStruct := StructDesc{Name: ts.Name.String(), Field: make([]StructField, 0, len(tt.Fields.List))}
 							for _, field := range tt.Fields.List {
-								newField := struct {
-									Name string
-									Type string
-									Tags []string
-								}{}
+								newField := StructField{}
 								if len(field.Names) < 1 {
 									continue
 								}
 								newField.Name = field.Names[0].Name
 								newField.Type = getTypeName(field.Type)
 								if nil != field.Tag {
-									newField.Tags = strings.Split(reflect.StructTag(strings.Trim(field.Tag.Value, "`")).Get(tag), ",")
+									tags := strings.Split(reflect.StructTag(strings.Trim(field.Tag.Value, "`")).Get(tag), ",")
+									newField.Tags = make(map[string]string, len(tags))
+									for _, tag := range tags {
+										ts := strings.SplitN(tag, "=", 2)
+										if len(ts) == 1 {
+											newField.Tags[ts[0]] = ""
+										} else {
+											newField.Tags[ts[0]] = ts[1]
+										}
+									}
 								}
 								newStruct.Field = append(newStruct.Field, newField)
 							}
