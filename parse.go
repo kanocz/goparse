@@ -16,9 +16,10 @@ type StructDesc struct {
 
 // StructField describes field itself
 type StructField struct {
-	Name string
-	Type string
-	Tags map[string]string
+	Name      string
+	Type      string
+	Tags      []string
+	TagParams map[string]string
 }
 
 func getTypeName(t ast.Expr) string {
@@ -60,13 +61,14 @@ func GetFileStructs(filename string, prefix string, tag string) ([]StructDesc, e
 								newField.Type = getTypeName(field.Type)
 								if nil != field.Tag {
 									tags := strings.Split(reflect.StructTag(strings.Trim(field.Tag.Value, "`")).Get(tag), ",")
-									newField.Tags = make(map[string]string, len(tags))
+									newField.Tags = make([]string, 0, len(tags))
+									newField.TagParams = make(map[string]string, len(tags))
 									for _, tag := range tags {
 										ts := strings.SplitN(tag, "=", 2)
 										if len(ts) == 1 {
-											newField.Tags[ts[0]] = ""
+											newField.Tags = append(newField.Tags, ts[0])
 										} else {
-											newField.Tags[ts[0]] = ts[1]
+											newField.TagParams[ts[0]] = ts[1]
 										}
 									}
 								}
