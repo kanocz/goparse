@@ -1,6 +1,7 @@
 package goparse
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -33,6 +34,8 @@ func getTypeName(t ast.Expr) string {
 		return "[]" + getTypeName(e.Elt)
 	case *ast.StarExpr:
 		return "*" + getTypeName(e.X)
+	case *ast.MapType:
+		return fmt.Sprintf("map[%s]%s", getTypeName(e.Key), getTypeName(e.Value))
 	}
 	return "unknown"
 }
