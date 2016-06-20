@@ -37,11 +37,11 @@ func main() {
 	}
 
 	fmt.Print("package main\n\n")
-	fmt.Print("import (\n\t\"net/http\"\n\t\"strconv\"\nt\"strings\"\n)\n\n")
+	fmt.Print("import (\n\t\"net/http\"\n\t\"github.com/julienschmidt/httprouter\"\n\t\"strconv\"\nt\"strings\"\n)\n\n")
 
 	for _, st := range s {
-		errDefined := false
-		fmt.Printf("func %sParse(request *http.Request) (%s,string) {\n", st.Name, st.Name)
+		fmt.Printf("func %sParse(request *http.Request, params httprouter.Params) (%s,string) {\n", st.Name, st.Name)
+		fmt.Print("\tvar err error\n\t_ = err\n")
 		fmt.Printf("\tres := %s{}\n", st.Name)
 		fmt.Print("\trequest.ParseMultipartForm(0)\n\n")
 		for _, f := range st.Field {
@@ -54,6 +54,12 @@ func main() {
 			checks := []string{}
 			if nil != f.Tags && len(f.Tags) > 1 {
 				checks = f.Tags[1:]
+			}
+
+			var isParam = false
+			if len(checks) > 1 && "param" == checks[0] {
+				isParam = true
+				checks = checks[1:]
 			}
 
 			if f.Type == "map[string][]string" {
@@ -77,7 +83,11 @@ func main() {
 				fmt.Printf("\tres.%s = []int64{}\n\n", f.Name)
 				_, ok := f.TagParams["jarray"]
 				if ok {
-					fmt.Printf("\tparam%s := strings.Split(request.Form.Get(\"%s\"), \",\")\n", f.Name, pname)
+					if isParam {
+						fmt.Printf("\tparam%s := strings.Split(params.ByName(\"%s\"), \",\")\n", f.Name, pname)
+					} else {
+						fmt.Printf("\tparam%s := strings.Split(request.Form.Get(\"%s\"), \",\")\n", f.Name, pname)
+					}
 					fmt.Printf("\tfor _, _x := range param%s {\n", f.Name)
 					fmt.Print("\t\tx, err := strconv.ParseInt(_x, 10, 64)\n")
 					fmt.Printf("\t\tif nil == err {\n")
@@ -104,7 +114,11 @@ func main() {
 			} else {
 
 				if !strings.HasPrefix(f.Type, "[]") {
-					fmt.Printf("\tparam%s := request.Form.Get(\"%s\")\n", f.Name, pname)
+					if isParam {
+						fmt.Printf("\tparam%s := params.ByName(\"%s\")\n", f.Name, pname)
+					} else {
+						fmt.Printf("\tparam%s := request.Form.Get(\"%s\")\n", f.Name, pname)
+					}
 				} else {
 					// todo: other [] types
 					if f.Type == "[]string" {
@@ -140,30 +154,14 @@ func main() {
 				case "[]string":
 					fmt.Printf("\tres.%s = param%s\n\n", f.Name, f.Name)
 				case "int":
-					fmt.Printf("\tres.%s, err = strconv.Atoi(param%s)\n\n", f.Name, f.Name)
+					fmt.Printf("\tres.%s = strconv.Atoi(param%s)\n\n", f.Name, f.Name)
 				case "int64":
-					if !errDefined {
-						fmt.Print("\tvar err error\n\n")
-						errDefined = true
-					}
 					fmt.Printf("\tres.%s, err = strconv.ParseInt(param%s, 10, 64)\n\n", f.Name, f.Name)
 				case "uint64":
-					if !errDefined {
-						fmt.Print("\tvar err error\n\n")
-						errDefined = true
-					}
 					fmt.Printf("\tres.%s, err = strconv.ParseUint(param%s, 10, 64)\n\n", f.Name, f.Name)
 				case "float64":
-					if !errDefined {
-						fmt.Print("\tvar err error\n\n")
-						errDefined = true
-					}
 					fmt.Printf("\tres.%s, err = strconv.ParseFloat(param%s, 64)\n\n", f.Name, f.Name)
 				case "bool":
-					if !errDefined {
-						fmt.Print("\tvar err error\n\n")
-						errDefined = true
-					}
 					fmt.Printf("\tres.%s, err = strconv.ParseBool(param%s)\n\n", f.Name, f.Name)
 				}
 
@@ -191,9 +189,6 @@ func main() {
 
 			}
 
-		}
-		if errDefined {
-			fmt.Println("\t_ = err")
 		}
 		fmt.Println("return res, \"\"")
 		fmt.Println("}")
