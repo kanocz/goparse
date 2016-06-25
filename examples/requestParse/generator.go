@@ -57,7 +57,7 @@ func main() {
 			}
 
 			var isParam = false
-			if len(checks) > 1 && "param" == checks[0] {
+			if len(checks) > 0 && "param" == checks[0] {
 				isParam = true
 				checks = checks[1:]
 			}
@@ -154,7 +154,7 @@ func main() {
 				case "[]string":
 					fmt.Printf("\tres.%s = param%s\n\n", f.Name, f.Name)
 				case "int":
-					fmt.Printf("\tres.%s = strconv.Atoi(param%s)\n\n", f.Name, f.Name)
+					fmt.Printf("\tres.%s, err = strconv.Atoi(param%s)\n\n", f.Name, f.Name)
 				case "int64":
 					fmt.Printf("\tres.%s, err = strconv.ParseInt(param%s, 10, 64)\n\n", f.Name, f.Name)
 				case "uint64":
