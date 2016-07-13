@@ -37,7 +37,7 @@ func main() {
 	}
 
 	fmt.Print("package main\n\n")
-	fmt.Print("import (\n\t\"net/http\"\n\t\"github.com/julienschmidt/httprouter\"\n\t\"strconv\"\nt\"strings\"\n)\n\n")
+	fmt.Print("import (\n\t\"net/http\"\n\t\"github.com/julienschmidt/httprouter\"\n\t\"strconv\"\n\t\"strings\"\n\t\"time\"\n)\n\n")
 
 	for _, st := range s {
 		fmt.Printf("func %sParse(request *http.Request, params httprouter.Params) (%s,string) {\n", st.Name, st.Name)
@@ -56,7 +56,7 @@ func main() {
 				checks = f.Tags[1:]
 			}
 
-			var isParam = false
+			isParam := false
 			if len(checks) > 0 && "param" == checks[0] {
 				isParam = true
 				checks = checks[1:]
@@ -163,6 +163,8 @@ func main() {
 					fmt.Printf("\tres.%s, err = strconv.ParseFloat(param%s, 64)\n\n", f.Name, f.Name)
 				case "bool":
 					fmt.Printf("\tres.%s, err = strconv.ParseBool(param%s)\n\n", f.Name, f.Name)
+				case "time.Time":
+					fmt.Printf("\tres.%s, err = time.Parse(time.RFC3339, param%s)\n\n", f.Name, f.Name)
 				}
 
 				// post convert chcecks
@@ -171,7 +173,11 @@ func main() {
 					case "valid":
 						fmt.Printf("\tif nil != err {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", st.Name, pname)
 					case "nzero":
-						fmt.Printf("\tif 0 == res.%s {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, st.Name, pname)
+						if f.Type == "time.Time" {
+							fmt.Printf("\tif res.%s.IsZero() {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, st.Name, pname)
+						} else {
+							fmt.Printf("\tif 0 == res.%s {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, st.Name, pname)
+						}
 					}
 				}
 
