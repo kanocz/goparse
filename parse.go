@@ -36,6 +36,8 @@ func getTypeName(t ast.Expr) string {
 		return "*" + getTypeName(e.X)
 	case *ast.MapType:
 		return fmt.Sprintf("map[%s]%s", getTypeName(e.Key), getTypeName(e.Value))
+	case *ast.SelectorExpr:
+		return fmt.Sprintf("%s.%s", e.X.(*ast.Ident).Name, e.Sel.Name)
 	}
 	return "unknown"
 }
@@ -63,6 +65,7 @@ func GetFileStructs(filename string, prefix string, tag string) ([]StructDesc, e
 								if len(field.Names) < 1 {
 									continue
 								}
+
 								newField.Name = field.Names[0].Name
 								newField.Type = getTypeName(field.Type)
 								newField.Tags = []string{}
