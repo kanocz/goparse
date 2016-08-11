@@ -88,27 +88,30 @@ func main() {
 					} else {
 						fmt.Printf("\tparam%s := strings.Split(request.Form.Get(\"%s\"), \",\")\n", f.Name, pname)
 					}
-					fmt.Printf("\tfor _, _x := range param%s {\n", f.Name)
-					fmt.Print("\t\tx, err := strconv.ParseInt(_x, 10, 64)\n")
-					fmt.Printf("\t\tif nil == err {\n")
-					fmt.Printf("\t\t\tres.%s = append(res.%s, x)\n", f.Name, f.Name)
-					fmt.Print("\t\t}\n")
-					fmt.Print("\t}\n")
-
-					// pre convert chcecks
-					for _, c := range checks {
-						switch c {
-						case "nempty":
-							fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
-						}
-					}
 
 				} else {
 
+					if isParam {
+						fmt.Printf("\tparam%s := strings.Split(params.ByName(\"%s\"), \",\")\n", f.Name, pname)
+					} else {
+						fmt.Printf("\tparam%s, _ := request.Form[\"%s\"]\n", f.Name, pname)
+					}
+
 				}
 
-				if !ok {
-					log.Fatalln("no prefix for map[string]string field", f.Name, "in struct", st.Name)
+				fmt.Printf("\tfor _, _x := range param%s {\n", f.Name)
+				fmt.Print("\t\tx, err := strconv.ParseInt(_x, 10, 64)\n")
+				fmt.Printf("\t\tif nil == err {\n")
+				fmt.Printf("\t\t\tres.%s = append(res.%s, x)\n", f.Name, f.Name)
+				fmt.Print("\t\t}\n")
+				fmt.Print("\t}\n")
+
+				// pre convert chcecks
+				for _, c := range checks {
+					switch c {
+					case "nempty":
+						fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
+					}
 				}
 
 			} else {
@@ -122,7 +125,33 @@ func main() {
 				} else {
 					// todo: other [] types
 					if f.Type == "[]string" {
-						fmt.Printf("\tparam%s, ok%s := request.Form.[\"%s\"]\n", f.Name, f.Name, pname)
+						_, ok := f.TagParams["jarray"]
+						if ok {
+							fmt.Printf("\tres.%s = []string{}\n\n", f.Name)
+							if isParam {
+								fmt.Printf("\tparam%s := strings.Split(params.ByName(\"%s\"), \",\")\n", f.Name, pname)
+							} else {
+								fmt.Printf("\tparam%s := strings.Split(request.Form.Get(\"%s\"), \",\")\n", f.Name, pname)
+							}
+
+							fmt.Printf("\tfor _, _x := range param%s {\n", f.Name)
+							fmt.Print("\t\tx := strings.TrimSpace(_x)\n")
+							fmt.Printf("\t\tif \"\" != x {\n")
+							fmt.Printf("\t\t\tres.%s = append(res.%s, x)\n", f.Name, f.Name)
+							fmt.Print("\t\t}\n")
+
+							fmt.Print("\t}\n")
+
+						} else {
+							fmt.Printf("\tparam%s, _ := request.Form[\"%s\"]\n", f.Name, pname)
+						}
+						for _, c := range checks {
+							switch c {
+							case "nempty":
+								fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
+							}
+						}
+
 					}
 				}
 
@@ -152,7 +181,7 @@ func main() {
 				case "string":
 					fmt.Printf("\tres.%s = param%s\n\n", f.Name, f.Name)
 				case "[]string":
-					fmt.Printf("\tres.%s = param%s\n\n", f.Name, f.Name)
+					//					fmt.Printf("\tres.%s = param%s\n\n", f.Name, f.Name)
 				case "int":
 					fmt.Printf("\tres.%s, err = strconv.Atoi(param%s)\n\n", f.Name, f.Name)
 				case "int64":
