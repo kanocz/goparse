@@ -75,6 +75,9 @@ func GetFileStructs(filename string, prefix string, tag string) ([]StructDesc, e
 
 								if nil != field.Tag {
 									tags := strings.Split(reflect.StructTag(strings.Trim(field.Tag.Value, "`")).Get(tag), ",")
+									if len(tags) == 1 && tags[0] == "" {
+										continue
+									}
 
 									for _, tag := range tags {
 										ts := strings.SplitN(tag, "=", 2)
