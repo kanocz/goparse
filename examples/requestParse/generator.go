@@ -62,14 +62,88 @@ func main() {
 				checks = checks[1:]
 			}
 
-			if f.Type == "map[string][]string" {
+			if f.Type == "map[int64]int64" {
+				prefix, ok := f.TagParams["prefix"]
+				if !ok {
+					log.Fatalln("no prefix for map[int64]int64 field", f.Name, "in struct", st.Name)
+				}
+				prefixLen := len(prefix)
+				fmt.Printf("\tres.%s = map[int64]int64{}\n\n", f.Name)
+				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid, err := strconv.ParseInt(k[%d:], 10, 64)\n\t\t\tif nil != err {\n continue \n}\n\t\t\tval,err := strconv.ParseInt(v[0],10,64)\n if nil != err {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
+
+				for _, c := range checks {
+					switch c {
+					case "nempty":
+						fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
+					}
+				}
+			} else if f.Type == "map[string]int64" {
+				prefix, ok := f.TagParams["prefix"]
+				if !ok {
+					log.Fatalln("no prefix for map[string]int64 field", f.Name, "in struct", st.Name)
+				}
+				prefixLen := len(prefix)
+				fmt.Printf("\tres.%s = map[string]int64{}\n\n", f.Name)
+				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid := k[%d:]\n\t\t\tval,err := strconv.ParseInt(v[0],10,64)\n if nil != err {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
+
+				for _, c := range checks {
+					switch c {
+					case "nempty":
+						fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
+					}
+				}
+			} else if f.Type == "map[string]bool" {
+				prefix, ok := f.TagParams["prefix"]
+				if !ok {
+					log.Fatalln("no prefix for map[string]bool field", f.Name, "in struct", st.Name)
+				}
+				prefixLen := len(prefix)
+				fmt.Printf("\tres.%s = map[string]bool{}\n\n", f.Name)
+				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid := k[%d:]\n\t\t\tval,err := strconv.ParseBool(v[0])\n if nil != err {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
+
+				for _, c := range checks {
+					switch c {
+					case "nempty":
+						fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
+					}
+				}
+			} else if f.Type == "map[int64]bool" {
+				prefix, ok := f.TagParams["prefix"]
+				if !ok {
+					log.Fatalln("no prefix for map[int64]bool field", f.Name, "in struct", st.Name)
+				}
+				prefixLen := len(prefix)
+				fmt.Printf("\tres.%s = map[int64]bool{}\n\n", f.Name)
+				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid, err := strconv.ParseInt(k[%d:], 10, 64)\n\t\t\tif nil != err {\n continue \n}\n\t\t\tval,err := strconv.ParseBool(v[0])\n if nil != err {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
+
+				for _, c := range checks {
+					switch c {
+					case "nempty":
+						fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
+					}
+				}
+
+			} else if f.Type == "map[string][]string" {
 				prefix, ok := f.TagParams["prefix"]
 				if !ok {
 					log.Fatalln("no prefix for map[string][]string field", f.Name, "in struct", st.Name)
 				}
 				prefixLen := len(prefix)
+
 				fmt.Printf("\tres.%s = map[string][]string{}\n\n", f.Name)
-				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tres.%s[k[%d:]] = v\n\t\t}\n\t}\n", prefix, f.Name, prefixLen)
+
+				_, ok = f.TagParams["indexed"]
+				if ok {
+					fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n", prefix)
+					fmt.Printf("x := strings.Split(k[%d:], \"_\")\n", prefixLen)
+					fmt.Printf("if len(x) != 2 { return %s{}, \"%s_invalid\" }\n", st.Name, pname)
+					fmt.Printf("index, _ := strconv.Atoi(x[1])\nif index < 0 { return %s{}, \"%s_invalid\" }\nif nil == res.%s[x[0]] {\nres.%s[x[0]] = make([]string, index+1)\n}", st.Name, pname, f.Name, f.Name)
+					fmt.Printf("else { \n")
+					fmt.Printf("if len(res.%s[x[0]]) <= index {\nold := res.%s[x[0]]\nres.%s[x[0]] = make([]string, index+1)\ncopy(res.%s[x[0]], old)\n}\n", f.Name, f.Name, f.Name, f.Name)
+					fmt.Printf("\n}\nres.%s[x[0]][index] = v[0]\n}\n}\n", f.Name)
+				} else {
+					fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tres.%s[k[%d:]] = v\n\t\t}\n\t}\n", prefix, f.Name, prefixLen)
+				}
 			} else if f.Type == "map[string]string" {
 				prefix, ok := f.TagParams["prefix"]
 				if !ok {
