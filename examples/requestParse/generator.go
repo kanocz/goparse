@@ -123,6 +123,28 @@ func main() {
 					}
 				}
 
+			} else if f.Type == "map[int64][]int64" {
+				prefix, ok := f.TagParams["prefix"]
+				if !ok {
+					log.Fatalln("no prefix for map[int64][]int64 field", f.Name, "in struct", st.Name)
+				}
+				prefixLen := len(prefix)
+
+				fmt.Printf("\tres.%s = map[int64][]int64{}\n\n", f.Name)
+
+				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n", prefix)
+				fmt.Printf("xkey, _ := strconv.ParseInt(k[%d:], 10, 64)\n", prefixLen)
+				fmt.Println("xval := make([]int64, 0, len(v))")
+
+				fmt.Println("\tfor _, _x := range v {")
+				fmt.Println("\t\tx, err := strconv.ParseInt(_x, 10, 64)")
+				fmt.Println("\t\tif nil == err {")
+				fmt.Println("\t\t\txval = append(xval, x)")
+				fmt.Println("\t\t}")
+				fmt.Println("\t}")
+
+				fmt.Printf("res.%s[xkey] = xval\n}\n\t}\n", f.Name)
+
 			} else if f.Type == "map[string][]string" {
 				prefix, ok := f.TagParams["prefix"]
 				if !ok {
