@@ -145,6 +145,13 @@ func main() {
 
 				fmt.Printf("res.%s[xkey] = xval\n}\n\t}\n", f.Name)
 
+				for _, c := range checks {
+					switch c {
+					case "nempty":
+						fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
+					}
+				}
+
 			} else if f.Type == "map[string][]string" {
 				prefix, ok := f.TagParams["prefix"]
 				if !ok {
@@ -166,6 +173,14 @@ func main() {
 				} else {
 					fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tres.%s[k[%d:]] = v\n\t\t}\n\t}\n", prefix, f.Name, prefixLen)
 				}
+
+				for _, c := range checks {
+					switch c {
+					case "nempty":
+						fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
+					}
+				}
+
 			} else if f.Type == "map[string]string" {
 				prefix, ok := f.TagParams["prefix"]
 				if !ok {
@@ -174,6 +189,13 @@ func main() {
 				prefixLen := len(prefix)
 				fmt.Printf("\tres.%s = map[string]string{}\n\n", f.Name)
 				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tres.%s[k[%d:]] = v[0]\n\t\t}\n\t}\n", prefix, f.Name, prefixLen)
+
+				for _, c := range checks {
+					switch c {
+					case "nempty":
+						fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
+					}
+				}
 
 			} else if f.Type == "[]int64" {
 				fmt.Printf("\tres.%s = []int64{}\n\n", f.Name)
