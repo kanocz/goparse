@@ -37,7 +37,7 @@ func main() {
 	}
 
 	fmt.Print("package main\n\n")
-	fmt.Print("import (\n\t\"net/http\"\n\t\"github.com/julienschmidt/httprouter\"\n\t\"strconv\"\n\t\"strings\"\n\t\"time\"\n)\n\n")
+	fmt.Print("import (\n\t\"net/http\"\n\t\"github.com/julienschmidt/httprouter\"\n\t\"github.com/vincent-petithory/dataurl\"\n\t\"strconv\"\n\t\"strings\"\n\t\"time\"\n)\n\n")
 
 	for _, st := range s {
 		fmt.Printf("func %sParse(request *http.Request, params httprouter.Params) (%s,string) {\n", st.Name, st.Name)
@@ -122,6 +122,11 @@ func main() {
 						fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
 					}
 				}
+
+			} else if f.Type == "*dataurl.DataURL" {
+
+				fmt.Printf("\tres.%s, err = dataurl.DecodeString(request.Form.Get(\"%s\"))\n", f.Name, pname)
+				fmt.Printf("\tif nil != err {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", st.Name, pname)
 
 			} else if f.Type == "map[int64][]int64" {
 				prefix, ok := f.TagParams["prefix"]
@@ -284,15 +289,27 @@ func main() {
 				}
 
 				if tagLen, ok := f.TagParams["len"]; ok {
-					fmt.Printf("\tif %s != len(param%s) {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", tagLen, f.Name, st.Name, pname)
+					if f.Type == "string" {
+						fmt.Printf("\tif %s != utf8.RuneCountInString(param%s) {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", tagLen, f.Name, st.Name, pname)
+					} else {
+						fmt.Printf("\tif %s != len(param%s) {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", tagLen, f.Name, st.Name, pname)
+					}
 				}
 
 				if tagLen, ok := f.TagGt["len"]; ok {
-					fmt.Printf("\tif len(param%s) < %d {\n\t\treturn %s{}, \"%s_short\"\n\t}\n", f.Name, tagLen, st.Name, pname)
+					if f.Type == "string" {
+						fmt.Printf("\tif utf8.RuneCountInString(param%s) < %d {\n\t\treturn %s{}, \"%s_short\"\n\t}\n", f.Name, tagLen, st.Name, pname)
+					} else {
+						fmt.Printf("\tif len(param%s) < %d {\n\t\treturn %s{}, \"%s_short\"\n\t}\n", f.Name, tagLen, st.Name, pname)
+					}
 				}
 
 				if tagLen, ok := f.TagLt["len"]; ok {
-					fmt.Printf("\tif len(param%s) > %d {\n\t\treturn %s{}, \"%s_long\"\n\t}\n", f.Name, tagLen, st.Name, pname)
+					if f.Type == "string" {
+						fmt.Printf("\tif utf8.RuneCountInString(param%s) > %d {\n\t\treturn %s{}, \"%s_long\"\n\t}\n", f.Name, tagLen, st.Name, pname)
+					} else {
+						fmt.Printf("\tif len(param%s) > %d {\n\t\treturn %s{}, \"%s_long\"\n\t}\n", f.Name, tagLen, st.Name, pname)
+					}
 				}
 
 				switch f.Type {
