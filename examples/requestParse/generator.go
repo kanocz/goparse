@@ -241,9 +241,9 @@ func main() {
 
 				if !strings.HasPrefix(f.Type, "[]") {
 					if isParam {
-						fmt.Printf("\tparam%s := strings.TrimSpace(params.ByName(\"%s\"))\n", f.Name, pname)
+						fmt.Printf("\tparam%s := strings.Replace(strings.TrimSpace(params.ByName(\"%s\")), \"\\r\\n\", \"\\n\", -1)\n", f.Name, pname)
 					} else {
-						fmt.Printf("\tparam%s := strings.TrimSpace(request.Form.Get(\"%s\"))\n", f.Name, pname)
+						fmt.Printf("\tparam%s := strings.Replace(strings.TrimSpace(request.Form.Get(\"%s\")), \"\\r\\n\", \"\\n\", -1)\n", f.Name, pname)
 					}
 				} else {
 					// todo: other [] types
