@@ -126,7 +126,12 @@ func main() {
 			} else if f.Type == "*dataurl.DataURL" {
 
 				fmt.Printf("\tres.%s, err = dataurl.DecodeString(request.Form.Get(\"%s\"))\n", f.Name, pname)
-				fmt.Printf("\tif nil != err {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", st.Name, pname)
+				for _, c := range checks {
+					switch c {
+					case "nempty":
+						fmt.Printf("\tif nil != err {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", st.Name, pname)
+					}
+				}
 
 			} else if f.Type == "map[int64][]int64" {
 				prefix, ok := f.TagParams["prefix"]
