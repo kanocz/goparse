@@ -271,7 +271,7 @@ func main() {
 							fmt.Print("\t}\n")
 
 						} else {
-							fmt.Printf("\tparam%s, _ := request.Form[\"%s\"]\n", f.Name, pname)
+							fmt.Printf("\tres.%s, _ = request.Form[\"%s\"]\n", f.Name, pname)
 						}
 						for _, c := range checks {
 							switch c {
