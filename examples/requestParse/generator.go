@@ -78,6 +78,21 @@ func main() {
 						fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
 					}
 				}
+			} else if f.Type == "map[int64]string" {
+				prefix, ok := f.TagParams["prefix"]
+				if !ok {
+					log.Fatalln("no prefix for map[int64]string field", f.Name, "in struct", st.Name)
+				}
+				prefixLen := len(prefix)
+				fmt.Printf("\tres.%s = map[int64]string{}\n\n", f.Name)
+				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid, err := strconv.ParseInt(k[%d:], 10, 64)\n\t\t\tif nil != err {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tres.%s[id] = v[0]\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
+
+				for _, c := range checks {
+					switch c {
+					case "nempty":
+						fmt.Printf("\tif len(res.%s) == 0 {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
+					}
+				}
 			} else if f.Type == "map[string]int64" {
 				prefix, ok := f.TagParams["prefix"]
 				if !ok {
