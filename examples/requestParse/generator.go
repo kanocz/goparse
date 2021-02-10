@@ -41,6 +41,7 @@ func main() {
 
 	for _, st := range s {
 		fmt.Printf("func %sParse(request *http.Request, params httprouter.Params) (%s,string) {\n", st.Name, st.Name)
+		fmt.Print("\t_ = params\n")
 		fmt.Print("\tvar err error\n\t_ = err\n")
 		fmt.Printf("\tres := %s{}\n", st.Name)
 		fmt.Print("\trequest.ParseMultipartForm(0)\n\n")
