@@ -58,7 +58,7 @@ func main() {
 			}
 
 			isParam := false
-			if len(checks) > 0 && "param" == checks[0] {
+			if len(checks) > 0 && checks[0] == "param" {
 				isParam = true
 				checks = checks[1:]
 			}
@@ -70,7 +70,7 @@ func main() {
 				}
 				prefixLen := len(prefix)
 				fmt.Printf("\tres.%s = map[int64]int64{}\n\n", f.Name)
-				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid, err := strconv.ParseInt(k[%d:], 10, 64)\n\t\t\tif nil != err {\n continue \n}\n\t\t\tval,err := strconv.ParseInt(v[0],10,64)\n if nil != err {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
+				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid, err := strconv.ParseInt(k[%d:], 10, 64)\n\t\t\tif err != nil {\n continue \n}\n\t\t\tval,err := strconv.ParseInt(v[0],10,64)\n if err != nil {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
 
 				for _, c := range checks {
 					switch c {
@@ -85,7 +85,7 @@ func main() {
 				}
 				prefixLen := len(prefix)
 				fmt.Printf("\tres.%s = map[int64]string{}\n\n", f.Name)
-				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid, err := strconv.ParseInt(k[%d:], 10, 64)\n\t\t\tif nil != err {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tres.%s[id] = v[0]\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
+				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid, err := strconv.ParseInt(k[%d:], 10, 64)\n\t\t\tif err != nil {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t\tres.%s[id] = v[0]\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
 
 				for _, c := range checks {
 					switch c {
@@ -100,7 +100,7 @@ func main() {
 				}
 				prefixLen := len(prefix)
 				fmt.Printf("\tres.%s = map[string]int64{}\n\n", f.Name)
-				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid := k[%d:]\n\t\t\tval,err := strconv.ParseInt(v[0],10,64)\n if nil != err {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
+				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid := k[%d:]\n\t\t\tval,err := strconv.ParseInt(v[0],10,64)\n if err != nil {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
 
 				for _, c := range checks {
 					switch c {
@@ -115,7 +115,7 @@ func main() {
 				}
 				prefixLen := len(prefix)
 				fmt.Printf("\tres.%s = map[string]bool{}\n\n", f.Name)
-				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid := k[%d:]\n\t\t\tval,err := strconv.ParseBool(v[0])\n if nil != err {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
+				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid := k[%d:]\n\t\t\tval,err := strconv.ParseBool(v[0])\n if err != nil {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
 
 				for _, c := range checks {
 					switch c {
@@ -130,7 +130,7 @@ func main() {
 				}
 				prefixLen := len(prefix)
 				fmt.Printf("\tres.%s = map[int64]bool{}\n\n", f.Name)
-				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid, err := strconv.ParseInt(k[%d:], 10, 64)\n\t\t\tif nil != err {\n continue \n}\n\t\t\tval,err := strconv.ParseBool(v[0])\n if nil != err {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
+				fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n\t\t\tid, err := strconv.ParseInt(k[%d:], 10, 64)\n\t\t\tif err != nil {\n continue \n}\n\t\t\tval,err := strconv.ParseBool(v[0])\n if err != nil {\ncontinue\n}\n  res.%s[id] = val\n\t\t}\n\t}\n", prefix, prefixLen, f.Name)
 
 				for _, c := range checks {
 					switch c {
@@ -141,11 +141,22 @@ func main() {
 
 			} else if f.Type == "*dataurl.DataURL" {
 
-				fmt.Printf("\tres.%s, err = dataurl.DecodeString(request.Form.Get(\"%s\"))\n", f.Name, pname)
+				hasNempty := false
+				for _, c := range checks {
+					if c == "nempty" {
+						hasNempty = true
+					}
+				}
+
+				if hasNempty {
+					fmt.Printf("\tres.%s, err = dataurl.DecodeString(request.Form.Get(\"%s\"))\n", f.Name, pname)
+				} else {
+					fmt.Printf("\tres.%s, _ = dataurl.DecodeString(request.Form.Get(\"%s\"))\n", f.Name, pname)
+				}
 				for _, c := range checks {
 					switch c {
 					case "nempty":
-						fmt.Printf("\tif nil != err {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", st.Name, pname)
+						fmt.Printf("\tif err != nil {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", st.Name, pname)
 					}
 				}
 
@@ -164,7 +175,7 @@ func main() {
 
 				fmt.Println("\tfor _, _x := range v {")
 				fmt.Println("\t\tx, err := strconv.ParseInt(_x, 10, 64)")
-				fmt.Println("\t\tif nil == err {")
+				fmt.Println("\t\tif err == nil {")
 				fmt.Println("\t\t\txval = append(xval, x)")
 				fmt.Println("\t\t}")
 				fmt.Println("\t}")
@@ -192,7 +203,7 @@ func main() {
 					fmt.Printf("\tfor k, v := range request.Form {\n\t\tif strings.HasPrefix(k, \"%s\") {\n", prefix)
 					fmt.Printf("x := strings.Split(k[%d:], \"_\")\n", prefixLen)
 					fmt.Printf("if len(x) != 2 { return %s{}, \"%s_invalid\" }\n", st.Name, pname)
-					fmt.Printf("index, _ := strconv.Atoi(x[1])\nif index < 0 { return %s{}, \"%s_invalid\" }\nif nil == res.%s[x[0]] {\nres.%s[x[0]] = make([]string, index+1)\n}", st.Name, pname, f.Name, f.Name)
+					fmt.Printf("index, _ := strconv.Atoi(x[1])\nif index < 0 { return %s{}, \"%s_invalid\" }\nif res.%s[x[0]] == nil {\nres.%s[x[0]] = make([]string, index+1)\n}", st.Name, pname, f.Name, f.Name)
 					fmt.Printf("else { \n")
 					fmt.Printf("if len(res.%s[x[0]]) <= index {\nold := res.%s[x[0]]\nres.%s[x[0]] = make([]string, index+1)\ncopy(res.%s[x[0]], old)\n}\n", f.Name, f.Name, f.Name, f.Name)
 					fmt.Printf("\n}\nres.%s[x[0]][index] = v[0]\n}\n}\n", f.Name)
@@ -238,14 +249,14 @@ func main() {
 					if isParam {
 						fmt.Printf("\tparam%s := strings.Split(params.ByName(\"%s\"), \",\")\n", f.Name, pname)
 					} else {
-						fmt.Printf("\tparam%s, _ := request.Form[\"%s\"]\n", f.Name, pname)
+						fmt.Printf("\tparam%s := request.Form[\"%s\"]\n", f.Name, pname)
 					}
 
 				}
 
 				fmt.Printf("\tfor _, _x := range param%s {\n", f.Name)
 				fmt.Print("\t\tx, err := strconv.ParseInt(_x, 10, 64)\n")
-				fmt.Printf("\t\tif nil == err {\n")
+				fmt.Printf("\t\tif err == nil {\n")
 				fmt.Printf("\t\t\tres.%s = append(res.%s, x)\n", f.Name, f.Name)
 				fmt.Print("\t\t}\n")
 				fmt.Print("\t}\n")
@@ -280,14 +291,14 @@ func main() {
 
 							fmt.Printf("\tfor _, _x := range param%s {\n", f.Name)
 							fmt.Print("\t\tx := strings.TrimSpace(_x)\n")
-							fmt.Printf("\t\tif \"\" != x {\n")
+							fmt.Printf("\t\tif x  != \"\"{\n")
 							fmt.Printf("\t\t\tres.%s = append(res.%s, x)\n", f.Name, f.Name)
 							fmt.Print("\t\t}\n")
 
 							fmt.Print("\t}\n")
 
 						} else {
-							fmt.Printf("\tres.%s, _ = request.Form[\"%s\"]\n", f.Name, pname)
+							fmt.Printf("\tres.%s = request.Form[\"%s\"]\n", f.Name, pname)
 						}
 						for _, c := range checks {
 							switch c {
@@ -303,7 +314,7 @@ func main() {
 				for _, c := range checks {
 					switch c {
 					case "nempty":
-						fmt.Printf("\tif \"\" == param%s {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
+						fmt.Printf("\tif param%s == \"\" {\n\t\treturn %s{}, \"%s_empty\"\n\t}\n", f.Name, st.Name, pname)
 					case "sphinx":
 						fmt.Printf("\tif !sphinxCheckString(param%s) {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, st.Name, pname)
 					}
@@ -311,9 +322,9 @@ func main() {
 
 				if tagLen, ok := f.TagParams["len"]; ok {
 					if f.Type == "string" {
-						fmt.Printf("\tif %s != utf8.RuneCountInString(param%s) {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", tagLen, f.Name, st.Name, pname)
+						fmt.Printf("\tif utf8.RuneCountInString(param%s) != %s {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, tagLen, st.Name, pname)
 					} else {
-						fmt.Printf("\tif %s != len(param%s) {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", tagLen, f.Name, st.Name, pname)
+						fmt.Printf("\tif len(param%s) != %s {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, tagLen, st.Name, pname)
 					}
 				}
 
@@ -339,17 +350,17 @@ func main() {
 				case "[]string":
 					//					fmt.Printf("\tres.%s = param%s\n\n", f.Name, f.Name)
 				case "int":
-					fmt.Printf("\tres.%s, err = strconv.Atoi(param%s)\n\n", f.Name, f.Name)
+					fmt.Printf("\tres.%s, _ = strconv.Atoi(param%s)\n\n", f.Name, f.Name)
 				case "int64":
-					fmt.Printf("\tres.%s, err = strconv.ParseInt(param%s, 10, 64)\n\n", f.Name, f.Name)
+					fmt.Printf("\tres.%s, _ = strconv.ParseInt(param%s, 10, 64)\n\n", f.Name, f.Name)
 				case "uint64":
-					fmt.Printf("\tres.%s, err = strconv.ParseUint(param%s, 10, 64)\n\n", f.Name, f.Name)
+					fmt.Printf("\tres.%s, _ = strconv.ParseUint(param%s, 10, 64)\n\n", f.Name, f.Name)
 				case "float64":
-					fmt.Printf("\tres.%s, err = strconv.ParseFloat(param%s, 64)\n\n", f.Name, f.Name)
+					fmt.Printf("\tres.%s, _ = strconv.ParseFloat(param%s, 64)\n\n", f.Name, f.Name)
 				case "bool":
-					fmt.Printf("\tres.%s, err = strconv.ParseBool(param%s)\n\n", f.Name, f.Name)
+					fmt.Printf("\tres.%s, _ = strconv.ParseBool(param%s)\n\n", f.Name, f.Name)
 				case "time.Time":
-					fmt.Printf("\tres.%s, err = time.Parse(time.RFC3339, param%s)\n\n", f.Name, f.Name)
+					fmt.Printf("\tres.%s, _ = time.Parse(time.RFC3339, param%s)\n\n", f.Name, f.Name)
 				}
 
 				// post convert chcecks
@@ -361,21 +372,21 @@ func main() {
 						if f.Type == "time.Time" {
 							fmt.Printf("\tif res.%s.IsZero() {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, st.Name, pname)
 						} else {
-							fmt.Printf("\tif 0 == res.%s {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, st.Name, pname)
+							fmt.Printf("\tif res.%s == 0 {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, st.Name, pname)
 						}
 					}
 				}
 
 				if tagVal, ok := f.TagParams["val"]; ok {
-					fmt.Printf("\tif %s != res.%s {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", tagVal, f.Name, st.Name, pname)
+					fmt.Printf("\tif res.%s != %s {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, tagVal, st.Name, pname)
 				}
 
 				if tagVal, ok := f.TagGt["val"]; ok {
-					fmt.Printf("\tif %d > res.%s {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", tagVal, f.Name, st.Name, pname)
+					fmt.Printf("\tif res.%s < %d {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, tagVal, st.Name, pname)
 				}
 
 				if tagVal, ok := f.TagLt["val"]; ok {
-					fmt.Printf("\tif %d < res.%s {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", tagVal, f.Name, st.Name, pname)
+					fmt.Printf("\tif res.%s > %d {\n\t\treturn %s{}, \"%s_invalid\"\n\t}\n", f.Name, tagVal, st.Name, pname)
 				}
 
 			}
